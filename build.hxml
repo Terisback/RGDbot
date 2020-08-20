@@ -1,0 +1,9 @@
+-cp src
+-main Rgd
+
+-lib Haxicord
+-lib compiletime
+
+#--neko bin/neko/rgd.n
+--neko bin/nekorel/rgd.n
+#-D test
