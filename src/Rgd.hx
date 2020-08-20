@@ -11,19 +11,13 @@ class Rgd {
 	public static var db:Connection;
 	public static var commandMap:Map<String,Command> = new Map();
 
-	#if test
-	static var token = "";
-	public static var prefix = "";
-	public static var rgdId = "";
-	public static var botChan = "";
-	public static var msgChan = "";
-	#else 
-	static var token = "";
-	public static var prefix = "";
-	public static var rgdId = "";
-	public static var botChan = "";
-	public static var msgChan = "";
-	#end
+
+	static var token = InitData.token;
+	public static var prefix = InitData.prefix;
+	public static var rgdId = InitData.rgdId;
+	public static var botChan = InitData.botChan;
+	public static var msgChan = InitData.msgChan;
+
 	// public static var dbChan = '';
 
 	static function main() {
