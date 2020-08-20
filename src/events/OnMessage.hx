@@ -5,9 +5,16 @@ import com.raidandfade.haxicord.utils.DPERMS;
 import com.raidandfade.haxicord.types.Message;
 
 class OnMessage {
+
+    public static var messageOn:Array<(m:Message) -> Void> = new Array();
+
     public static function onMessage(m:Message) {
         
         if (m.getGuild().id.id != Rgd.rgdId) return;
+
+        for (func in messageOn) {
+            func(m);
+        }
 
         if (StringTools.startsWith(m.content, Rgd.prefix)) {
             if (!m.inGuild()) return;

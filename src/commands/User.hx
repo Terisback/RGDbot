@@ -1,5 +1,6 @@
 package commands;
 
+import events.OnMessage;
 import haxe.Timer;
 import com.raidandfade.haxicord.types.structs.Embed;
 import com.raidandfade.haxicord.types.Message;
@@ -18,6 +19,8 @@ class User {
                 "coins" INTEGER DEFAULT 0,
                 "voice" INTEGER DEFAULT 0,
                 "leave" INTEGER DEFAULT 0,
+                "part" TEXT DEFAULT "",
+                "about" TEXT DEFAULT "",
                 "here" INTEGER
             )'
         );
@@ -80,14 +83,16 @@ class User {
                 {name: 'Упоминание', value: '${member.user.tag}', _inline: true},
                 {name: 'Создан', value: '${Date.fromTime(member.user.id.timestamp).toString()}', _inline: true},
                 {name: 'Первый вход', value: '${u.first}', _inline: true},
-                {name: 'Репутация', value: '${u.rep}', _inline: true},
+                {name: 'Уровень увожения', value: '${u.rep}', _inline: true},
                 {name: 'Баланс', value: '${u.coins}', _inline: true},
+                
                 {name: 'Понаписал', value: '${u.exp}', _inline: true},
                 {name: 'Наговорил', value: '${inVoice.hours}:${inVoice.minutes}:${inVoice.seconds}', _inline: true},
                 {name: 'Ливал раз', value: '${u.leave}', _inline: true},
             ],
         }
-
+        if (u.part != '') {embed.fields.push({name: 'В браке с', value: '<@${u.part}>'});}
+        if (u.about != '') {embed.fields.push({name: 'Об юзере', value: '${u.about}'});}
         m.reply({embed: embed});
 
     }
@@ -121,10 +126,10 @@ class User {
             m.reply({content: 'Нельзя уважать самого себя'});
             return;
         }
-
+        
         Rgd.db.request('UPDATE users SET rep = rep + 1 WHERE userId = "${u.id.id}"');
         var rep = Rgd.db.request('SELECT rep FROM users WHERE userId = "${u.id.id}"').getIntResult(0);
-        m.reply({content: 'Теперь репутация <@${u.id.id}> повысилась до `$rep`'});
+        m.reply({content: 'Теперь увожение <@${u.tag}> повысилось до `$rep`'});
 
         var timer = new Timer(1000*60*60*3);
         timer.run = function () {
@@ -140,11 +145,9 @@ class User {
     public static function reptop(m:Message, w:Array<String>) {
         var top = Rgd.db.request('SELECT userId,rep FROM users WHERE here = 1 ORDER BY rep DESC LIMIT 10');
         var c = '';
-        var members = m.getGuild().members;
         var p = 1;
-
         for (pos in top) 
-            c += '${p++}.${members[pos.userId].user.tag}:`${pos.rep}`\n';
+            c += '${p++}.<@${pos.userId}>:`${pos.rep}`\n';
 
         var embed:Embed = {
             fields: [
@@ -152,7 +155,6 @@ class User {
             ]
         }
         m.reply({embed: embed});
-
     }
 
 
@@ -161,12 +163,11 @@ class User {
     public static function voicetop(m:Message, w:Array<String>) {
         var top = Rgd.db.request('SELECT userId,voice FROM users WHERE here = 1 ORDER BY voice DESC LIMIT 10');
         var c = '';
-        var members = m.getGuild().members;
         var p = 1;
 
         for (pos in top) {
             var v = DateTools.parse(pos.voice);
-            c += '${p++}.${members[pos.userId].user.tag}:`${v.hours}:${v.minutes}:${v.seconds}`\n';
+            c += '${p++}.<@${pos.userId}>:`${v.hours}:${v.minutes}:${v.seconds}`\n';
         }
         var embed:Embed = {
             fields: [
@@ -182,11 +183,10 @@ class User {
     public static function chattop(m:Message, w:Array<String>) {
         var top = Rgd.db.request('SELECT userId,exp FROM users WHERE here = 1 ORDER BY exp DESC LIMIT 10');
         var c = '';
-        var members = m.getGuild().members;
         var p = 1;
 
         for (pos in top) {
-            c += '${p++}.${members[pos.userId].user.tag}:`${pos.exp}`\n';
+            c += '${p++}.<@${pos.userId}>:`${pos.exp}`\n';
         }
         var embed:Embed = {
             fields: [
@@ -196,5 +196,103 @@ class User {
         m.reply({embed: embed});
     }
     
+    static var marryArr:Array<String> = new Array();
+    @command(['marry','свадьба'], "Позвать юзера в брак", ">ping Юзера")
+    public static function marry(m:Message, w:Array<String>) {
+        
+        var has = Rgd.db.request('SELECT part FROM users WHERE userId = "${m.author.id.id}"');
+        if (has.results().first().part != "") {
+            m.reply({content: 'ты уже состоишь в браке'});
+            return;
+        } 
+        var u = m.mentions[0];
+        if (u == null) {
+            m.reply({content: 'не указан юзер для брака'});
+            return;
+        }
 
+        if (u.id.id == m.author.id.id) {
+            m.reply({content: 'нельзя заключить брак с самим собой'});
+            return;
+        }
+
+        if (marryArr.contains(u.id.id) || marryArr.contains(m.author.id.id)) {
+            m.reply({content: 'вашему предложение мешает какое-то другое'});
+            return;
+        }
+
+        var parthas = Rgd.db.request('SELECT part FROM users WHERE userId = "${u.id.id}"').results().first().part;
+        if (parthas != "") {
+            m.reply({content: 'этот человек занят'});
+            return;
+        }
+
+        m.reply({content: '${u.tag}, ${m.author.tag} предложил заключить брачный союз, если согласны, напишите `да` иначе `нет`'}, (msg, err) -> {
+            if (err != null) return;
+
+            var awaiter = null;
+            var timer = new Timer(1000 * 30);
+
+            awaiter = function (dm:Message) {
+                if (dm.author.id.id != u.id.id) return;
+                if (dm.content == 'да' || dm.content == 'нет') {
+                    if (dm.content == 'да') {
+                        Rgd.db.request('UPDATE users SET part = "${u.id.id}" WHERE userId = "${m.author.id.id}"');
+                        Rgd.db.request('UPDATE users SET part = "${m.author.id.id}" WHERE userId = "${u.id.id}"');
+                        m.reply({content: '${u.tag} и ${m.author.tag} сыграли свадьбу!'});
+                    } else {
+                        m.reply({content: '${m.author.tag}, тебе отказали'});
+                    }
+                    marryArr.remove(u.id.id);
+                    marryArr.remove(m.author.id.id);
+                    OnMessage.messageOn.remove(awaiter);
+                    timer.stop();
+                }
+            }
+            timer.run = function () {
+                m.reply({content: '${u.tag}, ${m.author.tag}, время вышло'});
+                OnMessage.messageOn.remove(awaiter);
+                marryArr.remove(u.id.id);
+                marryArr.remove(m.author.id.id);
+                timer.stop();
+            }
+
+            OnMessage.messageOn.push(awaiter);
+            marryArr.push(u.id.id);
+            marryArr.push(m.author.id.id);
+        });
+    }
+
+    @command(['divorce', 'развод'], "Развестись")
+    public static function divorce(m:Message, w:Array<String>) {
+        var has = Rgd.db.request('SELECT part FROM users WHERE userId = "${m.author.id.id}"');
+        var id = has.results().first().part;
+        if (id == '') {
+            m.reply({content: 'ты не состоишь ни в каком браке'});
+            return;
+        } 
+        
+        m.reply({content: '<@${id}>, ${m.author.tag} разводится с вами'}, (msg, err) -> {
+            if (err != null) return;
+
+            Rgd.db.request('UPDATE users SET part = "" WHERE userId = "${m.author.id.id}"');
+            Rgd.db.request('UPDATE users SET part = "" WHERE userId = "${id}"');
+        });
+    }
+
+    @inbot
+    @command(['setdesc'], "Установить описание себя в карточку юзера", ">описание(не более 500 символов)")
+    public static function setdesc(m:Message, w:Array<String>) {
+        var desc = w.join(" ");
+        if (desc.length == 0){
+            m.reply({content: 'Нужно описание'});
+            return;
+        }
+        if (desc.length > 500){
+            m.reply({content: 'Слишком жирно'});
+            return;
+        }
+        Rgd.db.request('UPDATE users SET about = "$desc" WHERE userId = "${m.author.id.id}"');
+        m.reply({content: '${m.author.tag} описание установлено'});
+    }
 }

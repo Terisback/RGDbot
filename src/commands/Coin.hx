@@ -71,7 +71,7 @@ class Coin {
     public static function gift(m:Message, w:Array<String>) {
 
         if (giftCd.exists(m.author.id.id)) {
-            var future = DateTools.delta(giftCd[m.author.id.id].date, 12 * 60 * 60 * 1000);
+            var future = DateTools.delta(giftCd[m.author.id.id].date, 3 * 60 * 60 * 1000);
             var now = Date.now();
             var dif = future.getTime() - now.getTime();
             var r = DateTools.parse(dif);
@@ -84,7 +84,7 @@ class Coin {
         Rgd.db.request('UPDATE users SET coins = coins + $random WHERE userId = "${m.author.id.id}"');
         m.reply({content: '<@${m.author.id.id}> получил из подарка `$random` монет'});
 
-        var timer = new Timer(1000*60*60*12);
+        var timer = new Timer(1000*60*60*3);
         timer.run = function () {
             giftCd.remove(m.author.id.id);
             timer.stop();
