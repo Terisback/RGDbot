@@ -1,5 +1,8 @@
 package commands;
 
+import com.raidandfade.haxicord.types.structs.Emoji;
+import events.OnReactionRemove;
+import events.OnReactionAdd;
 import events.OnMessage;
 import haxe.Timer;
 import com.raidandfade.haxicord.types.structs.Embed;
@@ -24,6 +27,7 @@ class User {
                 "here" INTEGER
             )'
         );
+
         Rgd.db.request('
             CREATE TABLE IF NOT EXISTS "usersRole" (
                 "id" INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,6 +35,17 @@ class User {
                 "roleId" TEXT
             )'
         );
+
+        Rgd.db.request('
+            CREATE TABLE IF NOT EXISTS "rep" (
+                "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+                "userId" TEXT,
+                "fromId" TEXT,
+                "reason" TEXT,
+                "_when" TEXT
+            )'
+        );
+
     }
 
 
@@ -68,12 +83,10 @@ class User {
     @command(["user", "юзер", "u"], "Информация о пользователе", ">пингЮзера")
     public static function user(m:Message, w:Array<String>) {
         var uid = m.mentions[0] == null ? m.author.id.id : m.mentions[0].id.id;
-
         var u = Rgd.db.request('SELECT * FROM users WHERE userId = "$uid"').results().first();
         var member = m.getGuild().members[uid];
 
         var inVoice = DateTools.parse(u.voice);
-
         var embed:Embed = {
             footer: {text: 'Запрос от ${m.getMember().displayName}'},
             color: 0xFF9900,
@@ -110,13 +123,16 @@ class User {
 
 
     static var respectCd:Map<String, Timer> = new Map();
+    static var respectArr:Array<String> = new Array();
     @command(["респект", "respect"], "Проявить увожение", ">пингЮзера")
     public static function respect(m:Message, w:Array<String>) {
+
+        if (respectArr.contains(m.author.id.id)) return;
+
         if (respectCd.exists(m.author.id.id)) {
             m.reply({content: 'Нельзя так часто проявлять увожение'});
             return;
         }
-
         var u = m.mentions[0];
         if (u == null) {
             m.reply({content: 'Не указан юзер'});
@@ -127,31 +143,151 @@ class User {
             return;
         }
         
-        Rgd.db.request('UPDATE users SET rep = rep + 1 WHERE userId = "${u.id.id}"');
-        var rep = Rgd.db.request('SELECT rep FROM users WHERE userId = "${u.id.id}"').getIntResult(0);
-        m.reply({content: 'Теперь увожение <@${u.tag}> повысилось до `$rep`'});
+        
+        m.reply({content: 'укажи причину повышения увожения, но не слишком длинную, ${m.author.tag}'},(msg, err) -> {
 
-        var timer = new Timer(1000*60*60*3);
-        timer.run = function () {
-            respectCd.remove(m.author.id.id);
-            timer.stop();
+            if (err != null) {
+                m.reply({content: 'что-то пошло не так'});
+                return;
+            }
+
+            var awaiter = null;
+            var timer = new Timer(1000*30);
+
+            awaiter = function (dm:Message) {
+                if (dm.author.id.id != m.author.id.id) return;
+
+                if (dm.mentions.length > 0 || dm.mention_everyone || dm.mention_roles.length > 0) {
+                    m.reply({content: 'пожалуйста без пингов'});
+                    return;
+                }
+                if (dm.content.length > 200) {
+                    m.reply({content: 'нужна причина покороче'});
+                    return;
+                }
+                
+
+                Rgd.db.request('INSERT INTO rep(userId, fromId, reason, _when) VALUES("${u.id.id}", "${m.author.id.id}", "${dm.content}", "${Date.now().toString()}")');
+                Rgd.db.request('UPDATE users SET rep = rep + 1 WHERE userId = "${u.id.id}"');
+                var rep = Rgd.db.request('SELECT rep FROM users WHERE userId = "${u.id.id}"').getIntResult(0);
+                m.reply({embed: {description: 'Теперь увожение ${u.tag} повысилось до `$rep`'}});
+
+                var t = new Timer(1000*60*60*3);
+                t.run = function () {
+                    respectCd.remove(m.author.id.id);
+                    timer.stop();
+                }
+
+                respectCd.set(m.author.id.id, timer);
+                respectArr.remove(m.author.id.id);
+                OnMessage.messageOn.remove(awaiter);
+                timer.stop();
+            }
+
+            timer.run =  function() {
+                m.reply({content: 'время вышло'});
+                respectArr.remove(m.author.id.id);
+                OnMessage.messageOn.remove(awaiter);
+                timer.stop();
+            }
+
+            respectArr.push(m.author.id.id);
+            OnMessage.messageOn.push(awaiter);
+        });
+
+    }
+
+    static var repMap:Map<Message,{timer:Timer, repList:Array<Dynamic>, page:Int}> = new Map();
+    @inbot()
+    @command(["rep", 'реп'], "Посмотреть информацию об чужом или своём увожении", "?юзер")
+    public static function rep(m:Message, w:Array<String>) {
+        var who = m.mentions[0] == null ? m.author.id.id : m.mentions[0].id.id;
+        var raw = Rgd.db.request('SELECT * FROM rep WHERE userId = "$who"').results();
+        
+        var respects:Array<Dynamic> = [];
+        for (rawpos in raw) {
+            respects.push(rawpos);
         }
-        respectCd.set(m.author.id.id, timer);
+
+        if (respects.length == 0) {
+            m.reply({content: 'его еще никто не увожает'});
+            return;
+        }
+
+        m.reply({embed: {description: 'подготовка'}}, (msg, err) -> {
+            if (err != null) return;
+
+            var timer = new Timer(1000*60);
+
+            var update = function (msg:Message) {
+                var r = repMap[msg];
+                var emb:Embed = {
+                    fields: [], 
+                    footer: {text: '${r.page+1}/${Math.floor((r.repList.length-1)/10)+1}'},
+                    description: 'История увожения <@${who}>',
+                };
+                for(p in r.page*10...r.page*10+10) {
+                    if (r.repList[p] == null) break;
+                    emb.fields.push({name: '${p+1}. ${r.repList[p]._when}', value: '<@${r.repList[p].fromId}>: ${r.repList[p].reason}' });
+                }
+                msg.edit({embed: emb});
+            }
+
+            var pageSwitch = function (em:Message, eu, ee:Emoji) {
+                if (!repMap.exists(em)) return;
+
+                var rr = repMap[em];
+
+                if (ee.name == "⬅️") {
+                    rr.page--;
+                    if (rr.page < 0) {
+                        rr.page = Math.floor(rr.repList.length/10);
+                    }
+                } else if (ee.name == "➡️") {
+                    rr.page++;
+                    if (rr.page > Math.floor(rr.repList.length/10)) {
+                        rr.page = 0;
+                    }
+                }
+
+                update(em);
+            }
+
+            if (respects.length > 10) {
+                msg.react("⬅️");
+                msg.react("➡️");
+                OnReactionAdd.reactOn.push(pageSwitch);
+                OnReactionRemove.reactOff.push(pageSwitch);
+            }
+
+            timer.run = function() {
+                repMap.remove(msg);
+                if (respects.length > 10) {
+                    OnReactionAdd.reactOn.remove(pageSwitch);
+                    OnReactionRemove.reactOff.remove(pageSwitch);
+                    timer.stop();
+                }
+            }
+
+            repMap.set(msg, {timer: timer, page: 0, repList: respects});
+            update(msg);
+
+        });
     }
 
 
     @inbot
-    @command(["reptop", 'рептоп'], "Топ юзеров по репутации")
+    @command(["reptop", 'рептоп'], "Топ юзеров по увожению")
     public static function reptop(m:Message, w:Array<String>) {
         var top = Rgd.db.request('SELECT userId,rep FROM users WHERE here = 1 ORDER BY rep DESC LIMIT 10');
         var c = '';
         var p = 1;
         for (pos in top) 
-            c += '${p++}.<@${pos.userId}>:`${pos.rep}`\n';
+            c += '${p++}. <@${pos.userId}>: `${pos.rep}` \n';
 
         var embed:Embed = {
             fields: [
-                {name: '**Топ по репутации**', value: c, _inline: true}, 
+                {name: '**Топ по увожению**', value: c, _inline: true}, 
             ]
         }
         m.reply({embed: embed});
@@ -167,7 +303,7 @@ class User {
 
         for (pos in top) {
             var v = DateTools.parse(pos.voice);
-            c += '${p++}.<@${pos.userId}>:`${v.hours}:${v.minutes}:${v.seconds}`\n';
+            c += '${p++}. <@${pos.userId}>: `${v.hours}:${v.minutes}:${v.seconds}` \n';
         }
         var embed:Embed = {
             fields: [
@@ -186,7 +322,7 @@ class User {
         var p = 1;
 
         for (pos in top) {
-            c += '${p++}.<@${pos.userId}>:`${pos.exp}`\n';
+            c += '${p++}. <@${pos.userId}>: `${pos.exp}` \n';
         }
         var embed:Embed = {
             fields: [

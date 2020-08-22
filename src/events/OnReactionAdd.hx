@@ -8,6 +8,7 @@ class OnReactionAdd {
     public static var reactOn:Array<(m:Message, u:User, e:Emoji) -> Void> = new Array();
     
     public static function onReactionAdd(m:Message, u:User, e:Emoji) {
+        if (u.bot) return;
         for (func in reactOn) {
             func(m, u, e);
         }

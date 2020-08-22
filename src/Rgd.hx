@@ -32,8 +32,10 @@ class Rgd {
 		//bot.onMessageEdit =
 		bot.onReactionAdd = OnReactionAdd.onReactionAdd;
 		bot.onReactionRemove = OnReactionRemove.onReactionRemove;
-
-		bot.ws.onClose = i -> Sys.exit(0);
+		bot.ws.onClose = i -> { 
+			trace(i);
+			Sys.exit(0);
+		}
 	}
 }
 

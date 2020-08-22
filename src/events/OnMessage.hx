@@ -12,9 +12,7 @@ class OnMessage {
         
         if (m.getGuild().id.id != Rgd.rgdId) return;
 
-        for (func in messageOn) {
-            func(m);
-        }
+        
 
         if (StringTools.startsWith(m.content, Rgd.prefix)) {
             if (!m.inGuild()) return;
@@ -46,6 +44,10 @@ class OnMessage {
                     }
                 }
                 Reflect.callMethod(command._class, Reflect.field(command._class,command.command),[m, words]);
+            }
+        } else {
+            for (func in messageOn) {
+                func(m);
             }
         }
 

@@ -13,9 +13,11 @@ class Coin {
     public static function coin(m:Message, w:Array<String>) {
         if (flips.indexOf(m.author.id.id) >= 0) return;
 
-        var coins = Std.parseInt(w[0]);
+        var coins:Int = Std.parseInt(w[0]);
         if (coins == null)
             coins = 0;
+
+        coins = Math.round(Math.abs(coins));
 
         var balance = Rgd.db.request('SELECT coins FROM users WHERE userId = "${m.author.id.id}"').getIntResult(0);
         if (coins <= balance) {
@@ -127,11 +129,10 @@ class Coin {
 
             var top = Rgd.db.request('SELECT userId,coins FROM users WHERE here = 1 ORDER BY coins DESC LIMIT 10');
             var c = '';
-            var members = m.getGuild().members;
             var p = 1;
 
             for (pos in top) 
-                c += '${p++}.${members[pos.userId].user.tag}:`${pos.coins}`\n';
+                c += '${p++}. <@${pos.userId}> :`${pos.coins}` \n';
             
 
             var embed:Embed = {
