@@ -40,7 +40,7 @@ class Help {
     }
 
     @inbot
-    @command(["info", "help"], "Показать модули либо информацию о конкретном модуле/команде"," ?модуль|команда")
+    @command(["info", "help", "?", "помощь"], "Показать модули либо информацию о конкретном модуле/команде"," ?модуль|команда")
     public static function help(m:Message, words:Array<String>) {
         var shift = words.shift();
         if (shift != null) {
@@ -97,7 +97,7 @@ class Help {
                         if (!m.hasPermission(DPERMS.ADMINISTRATOR)) 
                             continue;
 
-                    comlist += '`${filds.command[0].join('|')}` ${filds.command[1]}\n';
+                    comlist += '`${filds.command[0].join(',')}` ${filds.command[1]}\n';
                 }
 
                 embed.fields = [{
@@ -138,4 +138,71 @@ class Help {
         m.reply({content: 'РГД на связи'});
     }
     
+    @inbot
+    @command(["dayly", "day", "день"], "Дневная статистика РГД")
+    public static function dayly(m:Message, w:Array<String>)  {
+        postDay(m.channel_id.id);
+    }
+
+    @inbot
+    @command(["weekly", "week", "неделя"], "Недельная статистика РГД")
+    public static function weekly(m:Message, w:Array<String>)  {
+        postWeek(m.channel_id.id);
+    }
+
+
+    public static function postDay(chanId:String) {
+        var chat = Rgd.db.request('SELECT userId,text FROM day WHERE text > 0 ORDER BY text DESC LIMIT 15');
+        var k = 1;
+        var cc = '';
+        for (c in chat) {
+            cc += '${k++}. <@${c.userId}>: `${c.text}` \n';
+        }
+
+        var voice = Rgd.db.request('SELECT userId,voice FROM day WHERE voice > 0 ORDER BY voice DESC LIMIT 15');
+        k = 1;
+        var vv = '';
+        for (v in voice) {
+            var t = DateTools.parse(v.voice);
+            vv += '${k++}. <@${v.userId}>: `${t.hours}:${t.minutes}` \n';
+        }
+        Rgd.bot.sendMessage(chanId, 
+            {embed:{   
+                fields: [
+                    {name: 'стата по чату', value: cc, _inline: true},
+                    {name: 'стата по войсу', value: vv, _inline: true},
+                ],
+                title: "Ежедневная статистика",
+            }}
+        );
+    }
+
+
+    public static function postWeek(chanId:String) {
+        var chat = Rgd.db.request('SELECT userId,text FROM week WHERE text > 0 ORDER BY text DESC LIMIT 15');
+        var k = 1;
+        var cc = '';
+        for (c in chat) {
+            cc += '${k++}. <@${c.userId}>: `${c.text}` \n';
+        }
+
+        var voice = Rgd.db.request('SELECT userId,voice FROM week WHERE voice > 0 ORDER BY voice DESC LIMIT 15');
+        k = 1;
+        var vv = '';
+        for (v in voice) {
+            var t = DateTools.parse(v.voice);
+            vv += '${k++}. <@${v.userId}>: `${t.hours+(t.days*24)}:${t.minutes}` \n';
+        }
+        Rgd.bot.sendMessage(chanId, 
+            {embed:{   
+                fields: [
+                    {name: 'стата по чату', value: cc, _inline: true},
+                    {name: 'стата по войсу', value: vv, _inline: true},
+                ],
+                title: "Еженедельная статистика",
+            }}
+        );
+    }
+
+
 }

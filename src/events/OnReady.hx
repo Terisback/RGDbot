@@ -1,5 +1,8 @@
 package events;
 
+import commands.Help;
+import haxe.Timer;
+import events.OnVoiceStateUpdate.VoiceUpdateStruck;
 import sys.db.Sqlite;
 import haxe.rtti.Meta;
 
@@ -44,9 +47,41 @@ class OnReady {
                     Rgd.db.request('INSERT OR IGNORE INTO usersRole(userId, roleId) VALUES("${member.user.id.id}", "$s")');
                 }
             }
+
+
+            var voice_states:Array<VoiceUpdateStruck> = guild.voice_states;
+            for (m in voice_states) {
+                OnVoiceStateUpdate.voiceMap.set(m.user_id, Date.now());
+            }
         });
 
+        Rgd.db.request('INSERT OR IGNORE INTO day(userId) SELECT userId FROM users');
+        Rgd.db.request('INSERT OR IGNORE INTO week(userId) SELECT userId FROM users');
+
+
+        var time = Date.now();
+
+
+        if (time.getHours() < 15) {
+            var daylyTimer = new Timer((1000*60)*(((15-(time.getHours()+1))*60) - (time.getMinutes()+1)));
+            daylyTimer.run = function () {
+                Help.postDay(Rgd.msgChan);
+                Rgd.db.request('DELETE FROM day');
+                daylyTimer.stop();
+            }
+        }
+
+        if (time.getDay() == 6 && time.getHours() < 15) {
+            var weekTimer = new Timer((1000*60)*(((15-(time.getHours()+1))*60) - (time.getMinutes()+1)));
+            weekTimer.run = function () {
+                Help.postWeek(Rgd.msgChan);
+                Rgd.db.request('DELETE FROM week');
+                weekTimer.stop();
+            }
+        }
 
         trace("RGD online");
     }
+
+    
 }

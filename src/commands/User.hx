@@ -1,5 +1,6 @@
 package commands;
 
+
 import com.raidandfade.haxicord.types.structs.Emoji;
 import events.OnReactionRemove;
 import events.OnReactionAdd;
@@ -45,6 +46,25 @@ class User {
                 "_when" TEXT
             )'
         );
+            
+
+        Rgd.db.request('
+            CREATE TABLE IF NOT EXISTS "day" (
+                "userId" TEXT PRIMARY KEY,
+                "voice" INTEGER DEFAULT 0,
+                "text" INTEGER DEFAULT 0
+            )'
+        );
+        
+
+        Rgd.db.request('
+            CREATE TABLE IF NOT EXISTS "week" (
+                "userId" TEXT PRIMARY KEY,
+                "voice" INTEGER DEFAULT 0,
+                "text" INTEGER DEFAULT 0
+            )'
+        );
+
 
     }
 
@@ -124,7 +144,7 @@ class User {
 
     static var respectCd:Map<String, Timer> = new Map();
     static var respectArr:Array<String> = new Array();
-    @command(["респект", "respect"], "Проявить увожение", ">пингЮзера")
+    @command(["респект", "respect", "f"], "Проявить увожение", ">пингЮзера")
     public static function respect(m:Message, w:Array<String>) {
 
         if (respectArr.contains(m.author.id.id)) return;
@@ -300,10 +320,9 @@ class User {
         var top = Rgd.db.request('SELECT userId,voice FROM users WHERE here = 1 ORDER BY voice DESC LIMIT 10');
         var c = '';
         var p = 1;
-
         for (pos in top) {
             var v = DateTools.parse(pos.voice);
-            c += '${p++}. <@${pos.userId}>: `${v.hours}:${v.minutes}:${v.seconds}` \n';
+            c += '${p++}. <@${pos.userId}>: `${v.hours+(24*v.days)}:${v.minutes}:${v.seconds}` \n';
         }
         var embed:Embed = {
             fields: [
@@ -417,7 +436,7 @@ class User {
     }
 
     @inbot
-    @command(['setdesc'], "Установить описание себя в карточку юзера", ">описание(не более 500 символов)")
+    @command(['setdesc', 'описание'], "Установить описание себя в карточку юзера", ">описание(не более 500 символов)")
     public static function setdesc(m:Message, w:Array<String>) {
         var desc = w.join(" ");
         if (desc.length == 0){

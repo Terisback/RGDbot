@@ -112,6 +112,11 @@ class Coin {
             m.reply({content: 'Не указано число передачи'});
             return;
         }
+        if (amount <= 0) {
+            m.reply({content: 'Нельзя передавать такие числа'});
+            return;
+        }
+
         var has = Rgd.db.request('SELECT coins FROM users WHERE userId = "${m.author.id.id}"').getIntResult(0);
         if (has < amount) {
             m.reply({content: 'Недостаточно монет для передачи'});

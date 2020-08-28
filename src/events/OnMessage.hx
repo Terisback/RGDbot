@@ -4,6 +4,7 @@ import haxe.Timer;
 import com.raidandfade.haxicord.utils.DPERMS;
 import com.raidandfade.haxicord.types.Message;
 
+using StringTools;
 class OnMessage {
 
     public static var messageOn:Array<(m:Message) -> Void> = new Array();
@@ -11,17 +12,12 @@ class OnMessage {
     public static function onMessage(m:Message) {
         
         if (m.getGuild().id.id != Rgd.rgdId) return;
+        if (m.author.bot) return;
 
-        
+        var words = m.content.split(" ").filter(e -> e.length > 0);
+        if (words[0] != null && words[0].startsWith(Rgd.prefix)) {
+            var comName = words.shift().replace(Rgd.prefix, "");
 
-        if (StringTools.startsWith(m.content, Rgd.prefix)) {
-            if (!m.inGuild()) return;
-            var words:Array<String> = m.content.split(" ");
-            
-            words = words.filter(w -> w.length > 0);
-
-            var comName = words.shift();
-            comName = StringTools.replace(comName, Rgd.prefix, "");
             if (Rgd.commandMap.exists(comName)) {
                 var command:Rgd.Command = Rgd.commandMap.get(comName);
 
@@ -50,8 +46,11 @@ class OnMessage {
                 func(m);
             }
         }
+        
+        Rgd.db.request('UPDATE users SET exp = exp + ${words.length} WHERE userId = "${m.author.id.id}"');
+        Rgd.db.request('UPDATE day SET text = text + ${words.length} WHERE userId = "${m.author.id.id}"');
+        Rgd.db.request('UPDATE week SET text = text + ${words.length} WHERE userId = "${m.author.id.id}"');
 
-        Rgd.db.request('UPDATE users SET exp = exp + ${m.content.length} WHERE userId = "${m.author.id.id}"');
-
+    
     }
 }

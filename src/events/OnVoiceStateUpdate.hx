@@ -1,9 +1,11 @@
 package events;
 
+import haxe.Json;
+import sys.io.File;
 import com.raidandfade.haxicord.types.GuildMember;
 
 class OnVoiceStateUpdate {
-    static var voiceMap:Map<String, Date> = new Map();
+    public static var voiceMap:Map<String, Date> = new Map();
 
     public static function onVoiceStateUpdate(data:VoiceUpdateStruck) {
         if (data.guild_id != Rgd.rgdId) return;
@@ -12,6 +14,11 @@ class OnVoiceStateUpdate {
             if (voiceMap.exists(data.user_id)) {
                 var time = Date.now().getTime() - voiceMap[data.user_id].getTime();
                 Rgd.db.request('UPDATE users SET voice = voice + $time WHERE userId = "${data.user_id}"');
+                
+                
+                Rgd.db.request('UPDATE day SET voice = voice + $time WHERE userId = "${data.user_id}"');
+                Rgd.db.request('UPDATE week SET voice = voice + $time WHERE userId = "${data.user_id}"');
+                
                 voiceMap.remove(data.user_id);
             }
         } else {
@@ -21,7 +28,16 @@ class OnVoiceStateUpdate {
         }
     }
 
+    public static function saveTime() {
+        for (key => value in voiceMap) {
+            var time = Date.now().getTime() - value.getTime();
+            Rgd.db.request('UPDATE users SET voice = voice + $time WHERE userId = "$key"');
+        }
+    }
+
 }
+
+
 
 
 typedef VoiceUpdateStruck = {

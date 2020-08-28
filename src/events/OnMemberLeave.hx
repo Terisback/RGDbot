@@ -61,7 +61,7 @@ class OnMemberLeave {
     public static function onMemberLeave(g:Guild, u:User) {
         if (g.id.id != Rgd.rgdId) return;
 
-        Rgd.bot.sendMessage(Rgd.msgChan, {content: StringTools.replace(phrases[Std.random(phrases.length)], "%", '${u.username}[<@${u.id.id}>]')});
+        //Rgd.bot.sendMessage(Rgd.msgChan, {content: StringTools.replace(phrases[Std.random(phrases.length)], "%", '${u.username}[<@${u.id.id}>]')});
         Rgd.db.request('UPDATE users SET here = 0 WHERE userId = ${u.id.id}');
         Rgd.db.request('UPDATE users SET leave = leave + 1 WHERE userId = ${u.id.id}');
     }
