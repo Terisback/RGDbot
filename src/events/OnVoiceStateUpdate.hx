@@ -32,6 +32,8 @@ class OnVoiceStateUpdate {
         for (key => value in voiceMap) {
             var time = Date.now().getTime() - value.getTime();
             Rgd.db.request('UPDATE users SET voice = voice + $time WHERE userId = "$key"');
+            Rgd.db.request('UPDATE day SET voice = voice + $time WHERE userId = "${key}"');
+            Rgd.db.request('UPDATE week SET voice = voice + $time WHERE userId = "${key}"');
         }
     }
 

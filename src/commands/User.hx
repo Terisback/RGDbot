@@ -105,7 +105,7 @@ class User {
         var uid = m.mentions[0] == null ? m.author.id.id : m.mentions[0].id.id;
         var u = Rgd.db.request('SELECT * FROM users WHERE userId = "$uid"').results().first();
         var member = m.getGuild().members[uid];
-
+       
         var inVoice = DateTools.parse(u.voice);
         var embed:Embed = {
             footer: {text: 'Запрос от ${m.getMember().displayName}'},
@@ -118,9 +118,8 @@ class User {
                 {name: 'Первый вход', value: '${u.first}', _inline: true},
                 {name: 'Уровень увожения', value: '${u.rep}', _inline: true},
                 {name: 'Баланс', value: '${u.coins}', _inline: true},
-                
                 {name: 'Понаписал', value: '${u.exp}', _inline: true},
-                {name: 'Наговорил', value: '${inVoice.hours}:${inVoice.minutes}:${inVoice.seconds}', _inline: true},
+                {name: 'Наговорил', value: '${inVoice.hours + (inVoice.days*24)} ч ${inVoice.minutes} мин ${inVoice.seconds} сек', _inline: true},
                 {name: 'Ливал раз', value: '${u.leave}', _inline: true},
             ],
         }
@@ -322,7 +321,7 @@ class User {
         var p = 1;
         for (pos in top) {
             var v = DateTools.parse(pos.voice);
-            c += '${p++}. <@${pos.userId}>: `${v.hours+(24*v.days)}:${v.minutes}:${v.seconds}` \n';
+            c += '${p++}. <@${pos.userId}>: `${v.hours+(24*v.days)} ч ${v.minutes} мин ${v.seconds} сек` \n';
         }
         var embed:Embed = {
             fields: [
@@ -440,7 +439,7 @@ class User {
     public static function setdesc(m:Message, w:Array<String>) {
         var desc = w.join(" ");
         if (desc.length == 0){
-            m.reply({content: 'Нужно описание'});
+            m.reply({content: 'Вы не ввели описание'});
             return;
         }
         if (desc.length > 500){

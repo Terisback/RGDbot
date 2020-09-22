@@ -164,13 +164,22 @@ class Help {
         var vv = '';
         for (v in voice) {
             var t = DateTools.parse(v.voice);
-            vv += '${k++}. <@${v.userId}>: `${t.hours}:${t.minutes}` \n';
+            vv += '${k++}. <@${v.userId}>: `${t.hours} ч ${t.minutes} мин` \n';
         }
+
+        var yesterday = DateTools.delta(Date.now(), -(1000*60*60*24));
+        var novoregs = Rgd.db.request('SELECT userId FROM users WHERE first > "${yesterday.toString()}" and here = 1');
+        var nn = '';
+        for (n in novoregs) {
+            nn += '<@${n.userId}> ';
+        }
+
         Rgd.bot.sendMessage(chanId, 
             {embed:{   
                 fields: [
                     {name: 'стата по чату', value: cc, _inline: true},
                     {name: 'стата по войсу', value: vv, _inline: true},
+                    // {name: 'новореги', value: nn.length > 0 ? nn : "новорегов нет", _inline: false},
                 ],
                 title: "Ежедневная статистика",
             }}
@@ -191,13 +200,22 @@ class Help {
         var vv = '';
         for (v in voice) {
             var t = DateTools.parse(v.voice);
-            vv += '${k++}. <@${v.userId}>: `${t.hours+(t.days*24)}:${t.minutes}` \n';
+            vv += '${k++}. <@${v.userId}>: `${t.hours+(t.days*24)} ч ${t.minutes} мин` \n';
         }
+
+        var week = DateTools.delta(Date.now(), -(1000*60*60*24*7));
+        var novoregs = Rgd.db.request('SELECT userId FROM users WHERE first > "${week.toString()}" and here = 1');
+        var nn = '';
+        for (n in novoregs) {
+            nn += '<@${n.userId}> ';
+        }
+
         Rgd.bot.sendMessage(chanId, 
             {embed:{   
                 fields: [
                     {name: 'стата по чату', value: cc, _inline: true},
                     {name: 'стата по войсу', value: vv, _inline: true},
+                    // {name: 'новореги', value: nn.length > 0 ? nn : "новорегов нет", _inline: false},
                 ],
                 title: "Еженедельная статистика",
             }}

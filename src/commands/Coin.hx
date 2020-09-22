@@ -27,7 +27,7 @@ class Coin {
             var embed:Embed = {
                 author: {
                     icon_url: m.author.avatarUrl,
-                    name: '${m.getMember().displayName} подбросил монетку',
+                    name: '<@${m.author.id.id}> подбросил монетку',
                 },
                 description: '**ПОДБРАСЫВАЕМ...**\n__Ставка:__ $coins <:rgd_coin_rgd:745172019619823657>\n__Баланс:__ $balance <:rgd_coin_rgd:745172019619823657>',
                 thumbnail: {
@@ -47,7 +47,7 @@ class Coin {
                     msg.edit({embed:{
                         author: {
                             icon_url: m.author.avatarUrl,
-                            name: '${m.getMember().displayName} подбросил монетку',
+                            name: '<@${m.author.id.id}> подбросил монетку',
                         },
                         description: '**${win ? 'ПОБЕДА!' : 'ПРОИГРЫШ'}**\n__Ставка:__ ${Math.abs(coins)} <:rgd_coin_rgd:745172019619823657>\n__Баланс:__ ${balance+coins} <:rgd_coin_rgd:745172019619823657>',
                         thumbnail: {

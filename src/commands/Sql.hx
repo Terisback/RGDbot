@@ -11,7 +11,7 @@ class Sql {
         if (m.author.id.id != '371690693233737740') return;
         var get = Rgd.db.request(w.join(' '));
 
-        if (get.results().length == 0) return;
+        if (get.length == 0) return;
 
         m.reply({embed: {description: get.results().toString()}}, (msg, err) -> {
             if (err != null) {
