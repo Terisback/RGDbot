@@ -51,6 +51,7 @@ class OnReady {
 
             var voice_states:Array<VoiceUpdateStruck> = guild.voice_states;
             for (m in voice_states) {
+                if (m.member.user.bot) continue;
                 OnVoiceStateUpdate.voiceMap.set(m.user_id, Date.now());
             }
         });

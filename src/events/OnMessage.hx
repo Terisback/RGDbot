@@ -15,41 +15,56 @@ class OnMessage {
         if (m.author.bot) return;
 
         var words = m.content.split(" ").filter(e -> e.length > 0);
-        if (words[0] != null && words[0].startsWith(Rgd.prefix)) {
-            var comName = words.shift().replace(Rgd.prefix, "");
 
-            if (Rgd.commandMap.exists(comName)) {
-                var command:Rgd.Command = Rgd.commandMap.get(comName);
 
-                if (command.admin) {
-                    if (!m.hasPermission(DPERMS.ADMINISTRATOR)){
-                        return;
-                    }
+
+        if (words[0] != null  ) {
+
+            var p = '';
+            for (s in Rgd.prefix) {
+                if (words[0].startsWith(s)) {
+                    p = s;
+                    break;
                 }
-                if (command.inbot) {
-                    if (m.channel_id.id != Rgd.botChan) {
-                        m.reply({content: 'Данная команда работает только в <#${Rgd.botChan}>'}, (msg, err) -> {
-                            if (err != null) return;
-                            var timer = new Timer(1000*10);
-                            timer.run = function () {
-                                msg.delete();
-                                timer.stop();
-                            }
-                        });
-                        return; 
+            }
+            
+            if (p.length > 0) {
+                var comName = words.shift().replace(p, "");
+                if (Rgd.commandMap.exists(comName)) {
+                    var command:Rgd.Command = Rgd.commandMap.get(comName);
+
+                    if (command.admin) {
+                        if (!m.hasPermission(DPERMS.ADMINISTRATOR)){
+                            return;
+                        }
                     }
+                    if (command.inbot) {
+                        if (m.channel_id.id != Rgd.botChan) {
+                            m.reply({content: 'Данная команда работает только в <#${Rgd.botChan}>'}, (msg, err) -> {
+                                if (err != null) return;
+                                var timer = new Timer(1000*10);
+                                timer.run = function () {
+                                    msg.delete();
+                                    timer.stop();
+                                }
+                            });
+                            return; 
+                        }
+                    }
+                    Reflect.callMethod(command._class, Reflect.field(command._class,command.command),[m, words]);
                 }
-                Reflect.callMethod(command._class, Reflect.field(command._class,command.command),[m, words]);
+            } else {
+                for (func in messageOn) {
+                    func(m);
+                }
             }
-        } else {
-            for (func in messageOn) {
-                func(m);
-            }
+
+            Rgd.db.request('UPDATE users SET exp = exp + ${words.length} WHERE userId = "${m.author.id.id}"');
+            Rgd.db.request('UPDATE day SET text = text + ${words.length} WHERE userId = "${m.author.id.id}"');
+            Rgd.db.request('UPDATE week SET text = text + ${words.length} WHERE userId = "${m.author.id.id}"');
         }
         
-        Rgd.db.request('UPDATE users SET exp = exp + ${words.length} WHERE userId = "${m.author.id.id}"');
-        Rgd.db.request('UPDATE day SET text = text + ${words.length} WHERE userId = "${m.author.id.id}"');
-        Rgd.db.request('UPDATE week SET text = text + ${words.length} WHERE userId = "${m.author.id.id}"');
+       
 
     
     }

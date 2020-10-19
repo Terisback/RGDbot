@@ -9,6 +9,8 @@ class OnVoiceStateUpdate {
 
     public static function onVoiceStateUpdate(data:VoiceUpdateStruck) {
         if (data.guild_id != Rgd.rgdId) return;
+        
+        if (data.member.user.bot) return;
 
         if (data.channel_id == null) {
             if (voiceMap.exists(data.user_id)) {

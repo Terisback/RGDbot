@@ -168,18 +168,17 @@ class Help {
         }
 
         var yesterday = DateTools.delta(Date.now(), -(1000*60*60*24));
-        var novoregs = Rgd.db.request('SELECT userId FROM users WHERE first > "${yesterday.toString()}" and here = 1');
-        var nn = '';
-        for (n in novoregs) {
-            nn += '<@${n.userId}> ';
-        }
+        //var novoregs = Rgd.db.request('SELECT userId FROM users WHERE first > "${yesterday.toString()}" and here = 1');
+        var novoregs = Rgd.db.request('SELECT COUNT(userId) FROM users WHERE first > "${yesterday.toString()}"').getIntResult(0);
+        var activs = Rgd.db.request('SELECT COUNT(userId) FROM week WHERE text > 0').getIntResult(0);
 
         Rgd.bot.sendMessage(chanId, 
             {embed:{   
                 fields: [
                     {name: 'стата по чату', value: cc, _inline: true},
                     {name: 'стата по войсу', value: vv, _inline: true},
-                    // {name: 'новореги', value: nn.length > 0 ? nn : "новорегов нет", _inline: false},
+                    {name: 'новорегов в базе', value: '$novoregs', _inline: false},
+                    {name: 'писало в чате', value: '$activs', _inline: true},
                 ],
                 title: "Ежедневная статистика",
             }}
@@ -204,18 +203,16 @@ class Help {
         }
 
         var week = DateTools.delta(Date.now(), -(1000*60*60*24*7));
-        var novoregs = Rgd.db.request('SELECT userId FROM users WHERE first > "${week.toString()}" and here = 1');
-        var nn = '';
-        for (n in novoregs) {
-            nn += '<@${n.userId}> ';
-        }
+        var novoregs = Rgd.db.request('SELECT COUNT(userId) FROM users WHERE first > "${week.toString()}"').getIntResult(0);
+        var activs = Rgd.db.request('SELECT COUNT(userId) FROM week WHERE text > 0').getIntResult(0);
 
         Rgd.bot.sendMessage(chanId, 
             {embed:{   
                 fields: [
                     {name: 'стата по чату', value: cc, _inline: true},
                     {name: 'стата по войсу', value: vv, _inline: true},
-                    // {name: 'новореги', value: nn.length > 0 ? nn : "новорегов нет", _inline: false},
+                    {name: 'новорегов в базе', value: '$novoregs', _inline: false},
+                    {name: 'писало в чате', value: '$activs', _inline: true},
                 ],
                 title: "Еженедельная статистика",
             }}
