@@ -10,17 +10,19 @@ import haxe.io.BytesInput;
 import sys.io.File;
 import com.raidandfade.haxicord.types.Message;
 
+@desc("SIgame","Модуль для задавания вопросов из своей игры в чат")
 class SIgame {
 
     static var siQuests:Array<SiQuest> = new Array();
     static var quester:Timer;
-
+    static var skipVoted:Array<String> = [];
 
     @initialize
     public static function initialize() {
         if (FileSystem.exists("si.json")) {
             siQuests = Json.parse(File.getContent("si.json"));
-            quester = new Timer(1000 * 60 * 1);
+            if (siQuests.length == 0) return;
+            quester = new Timer(1000 * 60 * 60);
             quester.run = askNext;
         }
     }
@@ -28,7 +30,7 @@ class SIgame {
 
     static function ask() {
         var qq = siQuests[0];
-        Rgd.bot.sendMessage(Rgd.msgChan, {
+        Rgd.bot.sendMessage(Rgd.botChan, {
             embed: {
                 author: {
                     name: 'Категория: ${qq.theme}',
@@ -110,7 +112,7 @@ class SIgame {
 
             if (quester != null) 
                 quester.stop();
-            quester = new Timer(1000 * 60 * 1);
+            quester = new Timer(1000 * 60 * 60);
             quester.run = askNext;
         } else {
             Rgd.bot.sendMessage(m.channel_id.id, {
@@ -139,10 +141,9 @@ class SIgame {
         r.request();
     }
 
-
-    @command(['siAnswer', 'si', 'a'], "Ответить на вопрос", ">ответ")
+    @inbot
+    @command(['siAnswer', 'si', 'a', 'си'], "Ответить на вопрос", ">ответ")
     public static function siAnswer(m:Message, w:Array<String>) {
-        if (m.channel_id.id != Rgd.msgChan) return;
         if (siQuests[0] == null) return;
 
         var ra = siQuests[0].answer.split(" ").filter(e -> e != " ");
@@ -171,17 +172,17 @@ class SIgame {
 
     public static function askNext() {
 
-        Rgd.bot.sendMessage(Rgd.msgChan,{content: 'Следующий вопрос,а ответом на этот был `${siQuests[0].answer}`'});
+        Rgd.bot.sendMessage(Rgd.botChan,{content: 'Следующий вопрос,а ответом на этот был `${siQuests[0].answer}`'});
 
         quester.stop();
         siQuests.shift();
 
         if (siQuests.length > 0) {
             ask();
-            quester = new Timer(1000 * 60 * 1);
+            quester = new Timer(1000 * 60 * 60);
             quester.run = askNext;
         } else {
-            Rgd.bot.sendMessage(Rgd.msgChan, {
+            Rgd.bot.sendMessage(Rgd.botChan, {
                 embed: {
                     description: 'Вопросы пака закончились, ставьте следующий'
                 }
@@ -189,10 +190,22 @@ class SIgame {
         }
     }
 
-    @admin
+    @inbot
     @command(['siNext'], "Пропуск вопроса", "")
     public static function siNext(m:Message, w:Array<String>) {
         if (siQuests.length > 0) {
+
+            if (!skipVoted.contains(m.author.id.id)) {
+                skipVoted.push(m.author.id.id);
+            }
+    
+            if (skipVoted.length < 2) {
+                m.reply({content: 'Голосов для пропуска ${skipVoted.length}/2'});
+                return;
+            } else {
+                skipVoted = [];
+            }
+
             askNext();
         }
     }
