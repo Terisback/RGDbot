@@ -16,6 +16,10 @@ class SIgame {
     static var siQuests:Array<SiQuest> = new Array();
     static var quester:Timer;
     static var skipVoted:Array<String> = [];
+    
+    static var hinted:Array<Int> = [];
+
+
 
     @initialize
     public static function initialize() {
@@ -156,10 +160,42 @@ class SIgame {
         
         var percent = has / ra.length;
 
+        var ans = siQuests[0].answer;
+
+        var miss = function () {
+            if (hinted.length < Math.min(5, ans.length)) {
+
+                var hint = "";
+                while (true) {
+                    var r = Std.random(ans.length);
+                    if (!hinted.contains(r)) {
+                        hinted.push(r);
+                        break;
+                    }
+                }
+                
+
+                for (i in 0...ans.length) {
+                    if (hinted.contains(i)) {
+                        hint += ans.charAt(i);
+                    } else {
+                        hint += (ans.charAt(i) == " ") ? " " : "*";
+                    }
+                }
+
+                m.reply({content: 'Подсказка `$hint`'});
+
+            } else {
+                askNext();
+            }
+        }
+
         if (percent < 0.1) {
             m.reply({content: '<@${m.author.id.id}>, абсолютно неверный ответ'});
+            miss();
         } else if (percent >= 0.1 && percent < 0.5) {
             m.reply({content: '<@${m.author.id.id}>, кажется близко к ответу'});
+            miss();
         } else if (percent >= 0.5 && percent < 0.75){
             m.reply({content: '<@${m.author.id.id}>, не совсем, но засчитывается'});
             askNext();
@@ -174,6 +210,7 @@ class SIgame {
 
         Rgd.bot.sendMessage(Rgd.botChan,{content: 'Следующий вопрос,а ответом на этот был `${siQuests[0].answer}`'});
 
+        hinted = [];
         quester.stop();
         siQuests.shift();
 
