@@ -1,5 +1,6 @@
 package commands;
 
+import neko.Utf8;
 import haxe.Timer;
 import haxe.Json;
 import sys.FileSystem;
@@ -207,7 +208,6 @@ class SIgame {
 
 
     public static function askNext() {
-
         Rgd.bot.sendMessage(Rgd.botChan,{content: 'Следующий вопрос,а ответом на этот был `${siQuests[0].answer}`'});
 
         hinted = [];
@@ -252,8 +252,31 @@ class SIgame {
         File.saveContent('si.json', Json.stringify(siQuests));
     }
 
+    /*
+    @command(['cs'], "", "")
+    public static function cs(m:Message, w:Array<String>) {
+        var u:UnicodeString = w[0];
+        m.reply({content: ${u.toLowerCase()}}); 
+    }
+    */
 
+    static function toDownCase(str:String):String {
+        str = str.toLowerCase();
+        
+        var up = ["Й", "Ц", "У", "К", "Е", "Н", "Г", "Ш", "Щ", "З", "Х", "Ъ", "Ф", "Ы", "В", "А", "П", "Р", "О", "Л", "Д", "Ж", "Э", "Я", "Ч", "С", "М", "И", "Т", "Ь", "Б", "Ю", "Ё"];
+        var dw = ["й", "ц", "у", "к", "е", "н", "г", "ш", "щ", "з", "х", "ъ", "ф", "ы", "в", "а", "п", "р", "о", "л", "д", "ж", "э", "я", "ч", "с", "м", "и", "т", "ь", "б", "ю", "ё"];
+        var s = '';
 
+        for (i in 0...str.length) {
+            var l = str.charAt(i);
+            if (up.contains(l)) {
+                l = dw[up.indexOf(l)];
+            }
+            s += l;
+        }
+
+        return s;
+    }
 
 }
 
