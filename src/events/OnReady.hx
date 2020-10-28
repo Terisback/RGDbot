@@ -44,6 +44,7 @@ class OnReady {
                     VALUES("${member.user.id.id}", "${member.joined_at.toString()}", 1)
                 ');
                 for (s in member.roles) {
+                    Rgd.db.request('DELETE FROM usersRole WHERE userId = "${member.user.id.id}"');
                     Rgd.db.request('INSERT OR IGNORE INTO usersRole(userId, roleId) VALUES("${member.user.id.id}", "$s")');
                 }
             }
