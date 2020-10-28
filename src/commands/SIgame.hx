@@ -152,6 +152,15 @@ class SIgame {
         if (siQuests[0] == null) return;
 
         var ra = siQuests[0].answer.split(" ").filter(e -> e != " ");
+        
+        for (i in 0...ra.length) 
+            ra[i] = toDownCase(ra[i]);
+
+        for (i in 0...w.length) 
+            w[i] = toDownCase(w[i]);
+        
+        
+
         var has = 0;
 
         for (word in w) { 
@@ -228,7 +237,7 @@ class SIgame {
     }
 
     @inbot
-    @command(['siNext'], "Пропуск вопроса", "")
+    @command(['siNext', 'skip', 'next'], "Пропуск вопроса", "")
     public static function siNext(m:Message, w:Array<String>) {
         if (siQuests.length > 0) {
 
@@ -243,6 +252,23 @@ class SIgame {
                 skipVoted = [];
             }
 
+            askNext();
+        }
+    }
+
+
+    @inbot
+    @admin
+    @command(['siNextCat', 'skipCat'], "Пропуск категории", "")
+    public static function siNextCat(m:Message, w:Array<String>) {
+        if (siQuests.length > 0) {
+            var theme = siQuests[0].theme;
+            for (q in siQuests) {
+                if (q.theme != theme) {
+                    break;
+                }
+                siQuests.shift();
+            }
             askNext();
         }
     }
@@ -265,6 +291,7 @@ class SIgame {
         
         var up = ["Й", "Ц", "У", "К", "Е", "Н", "Г", "Ш", "Щ", "З", "Х", "Ъ", "Ф", "Ы", "В", "А", "П", "Р", "О", "Л", "Д", "Ж", "Э", "Я", "Ч", "С", "М", "И", "Т", "Ь", "Б", "Ю", "Ё"];
         var dw = ["й", "ц", "у", "к", "е", "н", "г", "ш", "щ", "з", "х", "ъ", "ф", "ы", "в", "а", "п", "р", "о", "л", "д", "ж", "э", "я", "ч", "с", "м", "и", "т", "ь", "б", "ю", "ё"];
+        var tr = ['`', '!', '@', '$', '$', '%', '^', '&', '*', '-', '+', '[', ']', '\\', "'", '"', '|', '<', '>', ',', '.', '?', '(', ')'];
         var s = '';
 
         for (i in 0...str.length) {
@@ -272,6 +299,10 @@ class SIgame {
             if (up.contains(l)) {
                 l = dw[up.indexOf(l)];
             }
+            if (tr.contains(l)) {
+                l = " ";
+            }
+
             s += l;
         }
 
