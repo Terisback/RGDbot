@@ -186,7 +186,7 @@ class SIgame {
                 
 
                 for (i in 0...ans.length) {
-                    if (hinted.contains(ans.charAt(i))) {
+                    if (hinted.contains(ans.charCodeAt(i))) {
                         hint += ans.charAt(i);
                     } else {
                         hint += (ans.charAt(i) == " ") ? " " : "*";
