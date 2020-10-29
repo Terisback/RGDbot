@@ -237,7 +237,7 @@ class SIgame {
     }
 
     @inbot
-    @command(['siNext', 'skip', 'next'], "Пропуск вопроса", "")
+    @command(['siNext', 'skip', 's', 'next', 'с', 'дальше'], "Пропуск вопроса", "")
     public static function siNext(m:Message, w:Array<String>) {
         if (siQuests.length > 0) {
 
@@ -259,7 +259,7 @@ class SIgame {
 
     @inbot
     @admin
-    @command(['siNextCat', 'skipCat'], "Пропуск категории", "")
+    @command(['siNextCat', 'skipCat', 'категорияГовно', 'ск'], "Пропуск категории", "")
     public static function siNextCat(m:Message, w:Array<String>) {
         if (siQuests.length > 0) {
             var theme = siQuests[0].theme;
