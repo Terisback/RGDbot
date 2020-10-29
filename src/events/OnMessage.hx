@@ -20,10 +20,11 @@ class OnMessage {
 
         if (words[0] != null  ) {
 
-            var p = '';
+            var p:String;
             for (s in Rgd.prefix) {
-                if (words[0].startsWith(s)) {
-                    p = s;
+                var symbol = String.fromCharCode(s);
+                if (words[0].startsWith(symbol)) {
+                    p = symbol;
                     break;
                 }
             }
