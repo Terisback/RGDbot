@@ -178,7 +178,10 @@ class SIgame {
                 var hint = "";
                 while (true) {
                     var r = Std.random(ans.length);
-                    if (!hinted.contains(r)) {
+                    var code = ans.charCodeAt(r);
+                    var sym = String.fromCharCode(code);
+                    trace('pushed $r $code $sym');
+                    if (!hinted.contains(code)) {
                         hinted.push(r);
                         break;
                     }
